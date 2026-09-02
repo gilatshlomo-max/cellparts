@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>משימת התא | משחק ביולוגיה לכיתה י״א</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,"Noto Sans Hebrew",sans-serif;background:linear-gradient(135deg,#eef7ff,#f8f3ff);color:#1d2940}
+header{padding:22px 28px;background:#fff;box-shadow:0 3px 16px #0001;display:flex;justify-content:space-between;align-items:center;gap:20px;position:sticky;top:0;z-index:5}
+h1{margin:0;font-size:30px} .sub{color:#68748a;margin-top:5px}
+.stats{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.badge{background:#f0f4fa;padding:10px 15px;border-radius:14px;font-weight:bold}.score{background:#fff0a8}
+main{max-width:1100px;margin:28px auto;padding:0 18px}
+.screen{display:none}.screen.active{display:block}
+.card{background:white;border-radius:24px;padding:28px;box-shadow:0 10px 30px #22335518;margin-bottom:20px}
+.hero{text-align:center;padding:45px 25px}.hero h2{font-size:38px;margin:5px}.hero p{font-size:19px;line-height:1.6}
+button{border:0;border-radius:14px;padding:13px 22px;font-size:17px;font-weight:bold;cursor:pointer;background:#3157d5;color:white;transition:.15s}
+button:hover{transform:translateY(-2px)}button.secondary{background:#e8edf7;color:#24314b}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.mode{padding:22px;border:2px solid #e3e9f4;border-radius:18px;cursor:pointer;background:#fbfcff}.mode:hover{border-color:#7891e9}
+.progress{height:10px;background:#e8edf5;border-radius:10px;overflow:hidden;margin:15px 0}.bar{height:100%;background:#3157d5;width:0;transition:.3s}
+.question{font-size:24px;line-height:1.45;margin:22px 0}.options{display:grid;gap:12px}.option{padding:16px 18px;background:#f5f7fb;border:2px solid #e2e7f0;border-radius:15px;text-align:right;font-size:18px;cursor:pointer}.option:hover{border-color:#7b91df}.option.correct{background:#e6f7eb;border-color:#41a65c}.option.wrong{background:#ffebeb;border-color:#d45b5b}.feedback{min-height:30px;margin:18px 0;font-size:18px;font-weight:bold}
+.tf{display:flex;gap:15px;justify-content:center}.tf button{min-width:150px}
+.dragwrap{display:grid;grid-template-columns:1fr 1fr;gap:22px}.items{display:flex;flex-wrap:wrap;gap:10px;align-content:flex-start}.drag{padding:12px 15px;background:#e9efff;border:2px solid #c7d4ff;border-radius:14px;cursor:grab;font-weight:bold}.dropzone{min-height:90px;border:3px dashed #bdc8db;border-radius:18px;padding:16px;background:#fafcff}.dropzone.over{background:#eef3ff;border-color:#3157d5}.dropzone h3{margin:0 0 8px}
+.cells{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.cell{padding:18px;border-radius:18px;background:#f8fafc;border:2px solid #e1e7f0}.cell h3{margin-top:0}
+.timer{font-size:20px;font-weight:bold}.pill{display:inline-block;padding:6px 10px;border-radius:20px;background:#edf1f8;margin:3px;font-size:14px}
+.result{text-align:center}.bigscore{font-size:60px;font-weight:900}
+@media(max-width:700px){.dragwrap,.cells{grid-template-columns:1fr}header{position:static;align-items:flex-start;flex-direction:column}.question{font-size:20px}}
+</style>
+</head>
+<body>
+<header>
+<div><h1>🧬 משימת התא</h1><div class="sub">משחק חזרה לכיתה י"א – מבנה ותפקוד התא</div></div>
+<div class="stats"><span class="badge score">⭐ נקודות: <span id="score">0</span></span><span class="badge">🔥 רצף: <span id="streak">0</span></span></div>
+</header>
+
+<main>
+<section id="home" class="screen active">
+<div class="card hero">
+<h2>מי שולט בתא?</h2>
+<p>4 משימות. אברונים, תפקידים, תאים פרוקריוטיים ואאוקריוטיים – ובעיקר שאלות של <b>חשיבה ויישום</b>.</p>
+<div class="grid" style="margin-top:28px">
+<div class="mode" onclick="startRound(1)"><h3>🎯 משימה 1</h3><p>התאם אברון לתפקיד</p></div>
+<div class="mode" onclick="startRound(2)"><h3>⚡ משימה 2</h3><p>נכון או לא נכון</p></div>
+<div class="mode" onclick="startRound(3)"><h3>🧠 משימה 3</h3><p>תאים ומצבים</p></div>
+<div class="mode" onclick="startRound(4)"><h3>🚨 משימה 4</h3><p>מה יקרה אם...?</p></div>
+</div>
+<button style="margin-top:25px" onclick="startAll()">🚀 מתחילים הכול</button>
+</div>
+</section>
+
+<section id="game" class="screen">
+<div class="card">
+<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><b id="roundTitle"></b><span class="timer" id="timer"></span></div>
+<div class="progress"><div class="bar" id="bar"></div></div>
+<div id="gameArea"></div>
+</div>
+<button class="secondary" onclick="goHome()">↩ חזרה לתפריט</button>
+</section>
+
+<section id="result" class="screen">
+<div class="card result">
+<h2>🏆 סיימת את משימת התא!</h2>
+<div class="bigscore" id="finalScore">0</div>
+<p id="finalText"></p>
+<div id="review"></div>
+<button onclick="startAll()">🔁 לשחק שוב</button>
+<button class="secondary" onclick="goHome()">תפריט ראשי</button>
+</div>
+</section>
+</main>
+
+<script>
+const mainOrg = [
+ {n:"קרום התא",f:"בררנות ומעבר חומרים אל התא וממנו"},
+ {n:"ריבוזום",f:"ייצור חלבונים"},
+ {n:"גרעין התא",f:"שמירת ה-DNA ובקרה על פעילות התא"},
+ {n:"מיטוכונדריון",f:"הפקת ATP בתהליך הנשימה התאית"},
+ {n:"דופן התא",f:"תמיכה והגנה מכנית"},
+ {n:"כלורופלסט",f:"קליטת אנרגיית אור וביצוע פוטוסינתזה"}
+];
+const dragPairs=[
+ ["קרום התא","בררנות ומעבר חומרים אל התא וממנו"],
+ ["ריבוזום","ייצור חלבונים"],
+ ["גרעין התא","שמירת ה-DNA ובקרה על פעילות התא"],
+ ["מיטוכונדריון","הפקת ATP בתהליך הנשימה התאית"],
+ ["דופן התא","תמיכה והגנה מכנית"],
+ ["כלורופלסט","קליטת אנרגיית אור וביצוע פוטוסינתזה"]
+];
+
+const tf=[
+["ריבוזומים נמצאים גם בתא חיידק וגם בתא צמח.","נכון","ריבוזומים קיימים גם בתאים פרוקריוטיים וגם באאוקריוטיים."],
+["לתא חיידק יש גרעין מוקף קרום.","לא נכון","לחיידק אין גרעין מוקף קרום; ה-DNA נמצא באזור הנוקלאואיד."],
+["כלורופלסט הוא אברון שנמצא בתאי צמח ומאפשר פוטוסינתזה.","נכון","נכון."],
+["מיטוכונדריון הוא אברון ייחודי לתאים של בעלי חיים.","לא נכון","מיטוכונדריה נמצאים גם בתאי בעלי חיים וגם בתאי צמח."],
+["דופן התא אחראית על בררנות המעבר של חומרים.","לא נכון","הקרום הוא המחסום הבררני; הדופן בעיקר תומכת ומגינה."],
+["כל תא חייב להכיל כלורופלסט כדי לייצר ATP.","לא נכון","ATP נוצר במסלולים שונים; המיטוכונדריון חשוב להפקת ATP בנשימה תאית."],
+["לכל התאים החיים יש קרום תא.","נכון","הקרום הוא גבול חיוני של התא."],
+["ריבוזום מוקף בקרום.","לא נכון","ריבוזום אינו אברון מוקף בקרום."]
+];
+
+const cellQ=[
+ {q:"בבדיקה במיקרוסקופ נצפה תא ללא גרעין מוקף קרום. מה המסקנה הסבירה ביותר?",o:["זה בהכרח תא צמח","זה תא פרוקריוטי, כמו חיידק","זה בהכרח תא בעל חיים","זה תא צמח שעבר פוטוסינתזה"],a:1,e:"היעדר גרעין מוקף קרום הוא מאפיין מרכזי של תאים פרוקריוטיים."},
+ {q:"לתא מסוים יש קרום תא, ריבוזומים, דופן תא אך אין לו כלורופלסט. איזה הסבר מתאים ביותר?",o:["זה בהכרח תא צמח","זה יכול להיות תא חיידק","זה בהכרח תא בעל חיים","זה לא תא חי"],a:1,e:"לחיידקים יש קרום, ריבוזומים ודופן; כלורופלסט אינו קיים בהם."},
+ {q:"מדען מזהה תא שיש בו גרעין וכלורופלסט. איזה זוג תהליכים אפשרי בתא?",o:["פוטוסינתזה ובקרה באמצעות DNA בגרעין","רק ייצור חלבונים בריבוזומים","רק נשימה תאית ללא פוטוסינתזה","רק מעבר חומרים דרך הדופן"],a:0,e:"כלורופלסט קשור לפוטוסינתזה והגרעין מכיל DNA ומבקר פעילות תאית."},
+ {q:"איזה מאפיין משותף לשלושת סוגי התאים שלמדתם – חיידק, צמח ובעל חיים?",o:["גרעין","כלורופלסט","ריבוזומים וקרום תא","מיטוכונדריון"],a:2,e:"לשלושתם יש קרום תא וריבוזומים."}
+];
+
+const applyQ=[
+ {q:"נפגע המיטוכונדריון בתא אאוקריוטי. מה צפוי להיפגע באופן הישיר ביותר?",o:["יכולת התא לייצר חלבונים בריבוזומים","אספקת ATP לתהליכים תאיים","שמירת ה-DNA בגרעין","הבררנות של קרום התא"],a:1,e:"פגיעה במיטוכונדריה עלולה להפחית את היכולת להפיק ATP בנשימה תאית."},
+ {q:"ייצור החלבונים בתא נפגע, אך ה-DNA בגרעין תקין. איזה מבנה סביר שנפגע?",o:["ריבוזומים","דופן התא","כלורופלסט","קרום התא"],a:0,e:"הריבוזומים הם אתר תרגום ה-mRNA וייצור החלבונים."},
+ {q:"תא צמח מאבד את הכלורופלסטים שלו. איזו יכולת תאית תיפגע באופן ישיר?",o:["פוטוסינתזה","תרגום חלבונים","שמירת ה-DNA","מעבר חומרים דרך הקרום"],a:0,e:"כלורופלסטים קולטים אנרגיית אור ומשמשים לביצוע פוטוסינתזה."},
+ {q:"הקרום של תא נפגע מאוד. מה עלול לקרות?",o:["ה-DNA יהפוך לחלבון","הוויסות של מעבר חומרים ייפגע והסביבה הפנימית תשתבש","הדופן תתחיל לבצע פוטוסינתזה","הריבוזומים יהפכו למיטוכונדריה"],a:1,e:"קרום התא חיוני לשמירה על סביבה פנימית מבוקרת ולוויסות מעבר חומרים."},
+ {q:"נפגעת הדופן בתא צמח, אך הקרום נשאר תקין. מה צפוי להיפגע במיוחד?",o:["התמיכה והחוזק המכני של התא","היכולת לתרגם mRNA","היכולת לשמור DNA","ייצור חלבונים בריבוזומים"],a:0,e:"דופן התא מספקת תמיכה והגנה מכנית."},
+ {q:"נפגע הגרעין בתא אאוקריוטי. איזה שילוב תוצאות הוא הסביר ביותר?",o:["פגיעה בבקרה על פעילות התא ובשמירת ה-DNA","פגיעה ישירה בדופן בלבד","פגיעה ישירה בפוטוסינתזה בלבד","הפיכת התא לפרוקריוטי"],a:0,e:"הגרעין מכיל את ה-DNA ומשמש מרכז בקרה על ביטוי גנים ופעילות תאית."},
+ {q:"חומר מסוים חוסם את פעילות הריבוזומים. איזה תהליך ייפגע ראשון?",o:["ייצור חלבונים","פוטוסינתזה","מעבר מים דרך הדופן","שמירת התא שלם"],a:0,e:"הריבוזומים מבצעים תרגום ומייצרים חלבונים."},
+ {q:"תא צמח נמצא בחושך ממושך. איזה אברון עדיין חיוני במיוחד להפקת ATP בנשימה תאית?",o:["מיטוכונדריון","כלורופלסט","דופן","גרעין"],a:0,e:"נשימה תאית במיטוכונדריה אינה תלויה ישירות באור."}
+];
+
+let score=0,streak=0,round=0,queue=[],idx=0,timerInt=null,allMode=false;
+function setStats(){document.getElementById("score").textContent=score;document.getElementById("streak").textContent=streak}
+function show(id){document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));document.getElementById(id).classList.add("active")}
+function goHome(){clearInterval(timerInt);show("home")}
+function addPoints(p){score+=p;streak++;setStats()}
+function miss(){streak=0;setStats()}
+function startAll(){score=0;streak=0;allMode=true;setStats();startRound(1)}
+function startRound(r){
+ clearInterval(timerInt);round=r;idx=0;allMode=allMode && r<4;
+ if(r===1){queue=[...dragPairs];document.getElementById("roundTitle").textContent="🎯 התאמת אברון לתפקיד";renderDrag()}
+ if(r===2){queue=[...tf].sort(()=>Math.random()-.5);document.getElementById("roundTitle").textContent="⚡ נכון או לא נכון";renderTF()}
+ if(r===3){queue=[...cellQ].sort(()=>Math.random()-.5);document.getElementById("roundTitle").textContent="🧩 איזה תא?";renderMC()}
+ if(r===4){queue=[...applyQ].sort(()=>Math.random()-.5);document.getElementById("roundTitle").textContent="🚨 מה יקרה אם...?";renderMC()}
+ show("game")
+}
+function progress(){document.getElementById("bar").style.width=(idx/queue.length*100)+"%"}
+function next(){idx++;if(idx>=queue.length){clearInterval(timerInt); if(allMode&&round<4){startRound(round+1)}else finish()}else{round===1?renderDrag():round===2?renderTF():renderMC()}}
+function renderDrag(){
+ progress();
+ document.getElementById("gameArea").innerHTML=`<div class="question">התאימו פעם אחת את כל ששת התפקידים לאברון המתאים. כתבו את <b>המספר הסידורי</b> של האברון.</div>
+ <div class="card" style="background:#f8fafc;box-shadow:none;padding:18px">
+ <div class="cells" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+ ${queue.map((x,i)=>`<div class="dropzone" style="min-height:120px;border-style:solid">
+   <div style="font-size:16px;font-weight:bold;margin-bottom:12px">${i+1}. ${x[1]}</div>
+   <input class="answerInput" type="number" min="1" max="6" data-answer="${mainOrg.findIndex(o=>o.n===x[0])+1}"
+     style="width:90px;padding:12px;border:2px solid #cbd5e1;border-radius:12px;font-size:20px;text-align:center" aria-label="מספר אברון">
+ </div>`).join("")}
+ </div></div>
+ <div style="margin-top:18px;text-align:center"><button id="matchBtn" onclick="submitMatching()">בדקו את ההתאמות ✓</button></div>
+ <div class="feedback" id="fb"></div>
+ <div style="margin-top:18px;background:#eef3ff;padding:16px;border-radius:16px">
+ <b>רשימת האברונים:</b><br>
+ ${mainOrg.map((o,i)=>`<span class="pill">${i+1}. ${o.n}</span>`).join("")}
+ </div>`;
+}
+function submitMatching(){
+ const inputs=[...document.querySelectorAll(".answerInput")];
+ let correct=0;
+ inputs.forEach(inp=>{
+   inp.disabled=true;
+   const ok=Number(inp.value)===Number(inp.dataset.answer);
+   if(ok){correct++;inp.style.borderColor="#41a65c";inp.style.background="#e6f7eb";}
+   else{inp.style.borderColor="#d45b5b";inp.style.background="#ffebeb";}
+ });
+ const fb=document.getElementById("fb");
+ if(correct===6){
+   addPoints(90);
+   fb.textContent="🏆 כל ההתאמות נכונות! +90 נקודות — עוברים למשימה הבאה.";
+ }else{
+   const gained=correct*10;
+   score+=gained; streak=0; setStats();
+   fb.textContent=`נכונות: ${correct}/6. קיבלתם ${gained} נקודות. התשובות הנכונות מסומנות בירוק.`;
+ }
+ document.getElementById("matchBtn").disabled=true;
+ setTimeout(next,1400);
+}
+
+function renderTF(){
+ progress();let x=queue[idx];
+ document.getElementById("gameArea").innerHTML=`<div class="question">${x[0]}</div><div class="tf"><button onclick="answerTF('נכון')">✓ נכון</button><button onclick="answerTF('לא נכון')">✗ לא נכון</button></div><div class="feedback" id="fb"></div>`;
+}
+function answerTF(ans){
+ let x=queue[idx],ok=ans===x[1],fb=document.getElementById("fb");
+ if(ok){addPoints(10);fb.textContent="✓ נכון! +10 נקודות — "+x[2]}else{miss();fb.textContent="✗ לא נכון. "+x[2]}
+ document.querySelectorAll(".tf button").forEach(b=>b.disabled=true);setTimeout(next,1000)
+}
+function renderMC(){
+ progress();let x=queue[idx];
+ document.getElementById("gameArea").innerHTML=`<div class="question">${x.q}</div><div class="options">${x.o.map((o,i)=>`<div class="option" onclick="answerMC(${i})">${o}</div>`).join("")}</div><div class="feedback" id="fb"></div>`;
+}
+function answerMC(i){
+ let x=queue[idx],ok=i===x.a,fb=document.getElementById("fb");
+ document.querySelectorAll(".option")[x.a].classList.add("correct");
+ if(!ok)document.querySelectorAll(".option")[i].classList.add("wrong");
+ if(ok){addPoints(round===4?20:12);fb.textContent="✓ מצוין! "+(round===4?"+20":" +12")+" נקודות — "+x.e}else{miss();fb.textContent="✗ כמעט. "+x.e}
+ document.querySelectorAll(".option").forEach(b=>b.style.pointerEvents="none");setTimeout(next,1200)
+}
+function finish(){
+ clearInterval(timerInt);show("result");document.getElementById("finalScore").textContent=score+" נק׳";
+ let msg=score>=220?"🏆 רמת שליטה גבוהה בתא!":score>=150?"🌟 שליטה טובה מאוד — נשאר רק ללטש כמה נקודות.":"💪 בסיס טוב! עוד סיבוב אחד ואתם משתפרים משמעותית.";
+ document.getElementById("finalText").textContent=msg;
+ document.getElementById("review").innerHTML=`<p>המשחק מתמקד במיוחד בהבנת קשרי <b>מבנה–תפקוד</b>, בהבחנה בין תא צמח, תא בעל חיים ותא חיידק, וביישום ידע במצבים חדשים.</p>`;
+}
+</script>
+</body>
+</html>
